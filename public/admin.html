@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Administración - Barras Estabilizadoras PC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Sección de Login -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+            <h1 class="text-2xl font-bold mb-6 text-center text-[#003478]">Panel de Administrador</h1>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Usuario</label>
+                    <input type="text" id="usuario" required class="w-full p-2 border rounded focus:outline-none focus:border-blue-500" placeholder="admin">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Contraseña</label>
+                    <input type="password" id="contraseña" required class="w-full p-2 border rounded focus:outline-none focus:border-blue-500" placeholder="123456">
+                </div>
+                <button type="submit" class="w-full bg-[#003478] text-white py-2 rounded font-bold hover:bg-blue-800 transition">
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sección de Administración -->
+    <div id="adminSection" class="hidden">
+        <header class="bg-[#003478] text-white p-4 shadow-md">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Panel Administrativo</h1>
+                <button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </header>
+
+        <main class="container mx-auto mt-8 mb-8 relative">
+            <div class="fixed inset-0 pointer-events-none opacity-30 -z-10" style="background-image: url('/images/hero.jpg'); background-size: cover; background-position: center; background-attachment: fixed;"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Formulario de Agregar Producto -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-bold mb-6 text-[#003478]">Agregar Nuevo Producto</h2>
+                    <form id="productForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Nombre del Producto</label>
+                            <input type="text" id="nombre" required class="w-full p-2 border rounded focus:outline-none focus:border-blue-500" placeholder="ej: Pastillas de Freno">
+                        </div>
+                        <!-- <div>
+                            <label class="block text-sm font-semibold mb-2">Categoría</label>
+                            <select id="categoria" required class="w-full p-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="">Seleccionar...</option>
+                                <option value="Motor">Motor</option>
+                                <option value="Suspensión">Suspensión</option>
+                                <option value="Frenos">Frenos</option>
+                                <option value="Eléctrico">Eléctrico</option>
+                            </select>
+                        </div> -->
+                        <!-- <div>
+                            <label class="block text-sm font-semibold mb-2">Modelo de Auto Compatible</label>
+                            <select id="modelo_auto" required class="w-full p-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="">Seleccionar...</option>
+                                <option value="Fiesta">Fiesta</option>
+                                <option value="Ranger">Ranger</option>
+                                <option value="Explorer">Explorer</option>
+                                <option value="Mustang">Mustang</option>
+                            </select>
+                        </div> -->
+                        <!-- <div>
+                            <label class="block text-sm font-semibold mb-2">Año</label>
+                            <input type="number" id="año" required class="w-full p-2 border rounded focus:outline-none focus:border-blue-500" placeholder="2023">
+                        </div> -->
+                        <!-- <div>
+                            <label class="block text-sm font-semibold mb-2">Precio ($)</label>
+                            <input type="number" id="precio" required step="0.01" class="w-full p-2 border rounded focus:outline-none focus:border-blue-500" placeholder="50000">
+                        </div> -->
+                        <!-- <div>
+                            <label class="block text-sm font-semibold mb-2">Stock</label>
+                            <input type="number" id="stock" required class="w-full p-2 border rounded focus:outline-none focus:border-blue-500" placeholder="10">
+                        </div> -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Imagen del Producto</label>
+                            <input type="file" id="imagen" required accept="image/*" class="w-full p-2 border rounded focus:outline-none focus:border-blue-500">
+                            <p class="text-xs text-gray-500 mt-1">Formatos: JPG, PNG, JPEG</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Descripción</label>
+                            <textarea id="descripcion" rows="4" class="w-full p-2 border rounded focus:outline-none focus:border-blue-500" placeholder="Describe el producto..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700 transition">
+                            Agregar Producto
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Lista de Productos -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-bold mb-6 text-[#003478]">Productos Registrados</h2>
+                    <div id="productList" class="space-y-4 max-h-96 overflow-y-auto">
+                        <p class="text-gray-500">Cargando productos...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const loginSection = document.getElementById('loginSection');
+        const adminSection = document.getElementById('adminSection');
+        const loginForm = document.getElementById('loginForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const productForm = document.getElementById('productForm');
+        const productList = document.getElementById('productList');
+
+        // Credenciales admin (en producción, esto debe validarse en el servidor)
+        const ADMIN_USER = 'PEDROcaicedo';
+        const ADMIN_PASS = 'AutoPC*';
+
+        // Evento de Login
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const usuario = document.getElementById('usuario').value;
+            const contraseña = document.getElementById('contraseña').value;
+
+            if (usuario === ADMIN_USER && contraseña === ADMIN_PASS) {
+                localStorage.setItem('adminLogged', 'true');
+                loginSection.classList.add('hidden');
+                adminSection.classList.remove('hidden');
+                cargarProductos();
+            } else {
+                alert('Usuario o contraseña incorrectos');
+            }
+        });
+
+        // Evento de Logout
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('adminLogged');
+            loginSection.classList.remove('hidden');
+            adminSection.classList.add('hidden');
+            loginForm.reset();
+        });
+
+        // Enviar Producto
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('nombre', document.getElementById('nombre').value);
+            // formData.append('categoria', document.getElementById('categoria').value);
+            // formData.append('modelo_auto', document.getElementById('modelo_auto').value);
+            // formData.append('año', document.getElementById('año').value);
+            // formData.append('precio', document.getElementById('precio').value);
+            // formData.append('stock', document.getElementById('stock').value);
+            formData.append('descripcion', document.getElementById('descripcion').value);
+            formData.append('imagen', document.getElementById('imagen').files[0]);
+
+            try {
+                const response = await fetch('/api/productos/agregar', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert('Producto agregado exitosamente');
+                    productForm.reset();
+                    cargarProductos();
+                } else {
+                    alert('Error al agregar producto');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al conectar con el servidor');
+            }
+        });
+
+        // Cargar productos
+        async function cargarProductos() {
+            try {
+                const response = await fetch('/api/productos');
+                const productos = await response.json();
+                
+                if (productos.length === 0) {
+                    productList.innerHTML = '<p class="text-gray-500">Sin productos aún</p>';
+                    return;
+                }
+
+                productList.innerHTML = productos.map(p => `
+                    <div class="border p-4 rounded bg-gray-50 hover:bg-gray-100 transition">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <p class="font-bold text-sm text-gray-800">${p.nombre}</p>
+                                <p class="text-xs text-gray-600 mt-2">${p.descripcion || 'Sin descripción'}</p>
+                                ${p.categoria && p.categoria !== 'General' ? `<p class="text-xs text-blue-600 mt-1">Categoría: ${p.categoria}</p>` : ''}
+                                ${p.modelo_auto && p.modelo_auto !== 'N/A' ? `<p class="text-xs text-gray-500">Modelo: ${p.modelo_auto} ${p.año ? '(' + p.año + ')' : ''}</p>` : ''}
+                            </div>
+                            <button onclick="eliminarProducto(${p.id})" class="bg-red-500 text-white text-xs px-3 py-1 rounded hover:bg-red-600 transition ml-2 flex-shrink-0">
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                productList.innerHTML = '<p class="text-red-500">Error al cargar productos</p>';
+            }
+        }
+
+        // Eliminar producto
+        async function eliminarProducto(id) {
+            if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+                try {
+                    const response = await fetch(`/api/productos/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        alert('Producto eliminado exitosamente');
+                        cargarProductos();
+                    } else {
+                        alert('Error al eliminar producto');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al conectar con el servidor');
+                }
+            }
+        }
+
+        // Verificar si ya está logueado
+        if (localStorage.getItem('adminLogged') === 'true') {
+            loginSection.classList.add('hidden');
+            adminSection.classList.remove('hidden');
+            cargarProductos();
+        }
+    </script>
+</body>
+</html>
