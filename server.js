@@ -5,7 +5,7 @@ const fs = require('fs');
 const db = require('./database');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Configurar multer para upload de imágenes
 const storage = multer.diskStorage({
