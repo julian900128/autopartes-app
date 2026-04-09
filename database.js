@@ -1,38 +1,47 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const mysql = require('mysql2/promise');
 
-// Crear carpeta 'data' fuera de public/ para seguridad
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+// Configuración de MySQL desde variables de entorno
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'autopartes',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+// Crear tabla si no existe
+async function initDatabase() {
+    try {
+        const connection = await pool.getConnection();
+        
+        const createTable = `
+            CREATE TABLE IF NOT EXISTS productos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(255) NOT NULL,
+                descripcion TEXT,
+                categoria VARCHAR(100) DEFAULT 'General',
+                modelo_auto VARCHAR(100) DEFAULT 'N/A',
+                año INT DEFAULT 0,
+                precio DECIMAL(10, 2) DEFAULT 0,
+                stock INT DEFAULT 0,
+                imagen_url VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+        
+        await connection.execute(createTable);
+        connection.release();
+        console.log('✅ Tabla de productos verificada/creada');
+    } catch (error) {
+        console.error('❌ Error al crear tabla:', error);
+        process.exit(1);
+    }
 }
 
-// Crear base de datos en la carpeta segura con permisos de escritura
-const dbPath = path.join(dataDir, 'productos.db');
-const db = new Database(dbPath);
+// Inicializar base de datos al cargar el módulo
+initDatabase();
 
-// Asegurar permisos de escritura
-fs.chmodSync(dbPath, 0o644);
-fs.chmodSync(dataDir, 0o755);
-
-// Crear tabla de productos con soporte para descripción
-const createTable = `
-CREATE TABLE IF NOT EXISTS productos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT NOT NULL,
-    descripcion TEXT,         -- NUEVA COLUMNA para tu textarea
-    categoria TEXT DEFAULT 'General',
-    modelo_auto TEXT DEFAULT 'N/A',
-    año INTEGER DEFAULT 0,
-    precio REAL DEFAULT 0,
-    stock INTEGER DEFAULT 0,
-    imagen_url TEXT
-);`;
-
-db.exec(createTable);
-
-// Nota: Si la tabla ya existía, SQLite no agregará la columna 'descripcion' automáticamente.
-// Si no ves la descripción, borra el archivo 'productos.db' y reinicia el servidor.
-
-module.exports = db;
+module.exports = pool;

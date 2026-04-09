@@ -39,7 +39,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // API para productos
-app.get('/api/productos', (req, res) => {
+app.get('/api/productos', async (req, res) => {
     const { q, modelo } = req.query;
     let query = 'SELECT * FROM productos WHERE 1=1';
     const params = [];
@@ -55,30 +55,32 @@ app.get('/api/productos', (req, res) => {
     }
 
     try {
-        const productos = db.prepare(query).all(...params);
+        const [productos] = await db.execute(query, params);
         res.json(productos);
     } catch (error) {
+        console.error('Error:', error);
         res.status(500).json({ error: 'Error al obtener productos' });
     }
 });
 
 // API para producto individual
-app.get('/api/productos/:id', (req, res) => {
+app.get('/api/productos/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const producto = db.prepare('SELECT * FROM productos WHERE id = ?').get(id);
-        if (producto) {
-            res.json(producto);
+        const [productos] = await db.execute('SELECT * FROM productos WHERE id = ?', [id]);
+        if (productos.length > 0) {
+            res.json(productos[0]);
         } else {
             res.status(404).json({ error: 'Producto no encontrado' });
         }
     } catch (error) {
+        console.error('Error:', error);
         res.status(500).json({ error: 'Error al obtener producto' });
     }
 });
 
 // Agregar producto (admin)
-app.post('/api/productos/agregar', upload.single('imagen'), (req, res) => {
+app.post('/api/productos/agregar', upload.single('imagen'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No se subió ninguna imagen' });
@@ -87,12 +89,12 @@ app.post('/api/productos/agregar', upload.single('imagen'), (req, res) => {
         const { nombre, categoria, modelo_auto, año, precio, stock, descripcion } = req.body;
         const imagen_url = `uploads/${req.file.filename}`;
 
-        const insert = db.prepare(`
+        const query = `
             INSERT INTO productos (nombre, descripcion, categoria, modelo_auto, año, precio, stock, imagen_url) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `);
+        `;
 
-        insert.run(
+        await db.execute(query, [
             nombre,
             descripcion || '',
             categoria || 'General',
@@ -101,7 +103,8 @@ app.post('/api/productos/agregar', upload.single('imagen'), (req, res) => {
             parseFloat(precio) || 0,
             parseInt(stock) || 0,
             imagen_url
-        );
+        ]);
+
         res.json({ success: true, message: 'Producto agregado exitosamente' });
     } catch (error) {
         console.error('Error:', error);
@@ -110,22 +113,22 @@ app.post('/api/productos/agregar', upload.single('imagen'), (req, res) => {
 });
 
 // Eliminar producto (admin)
-app.delete('/api/productos/:id', (req, res) => {
+app.delete('/api/productos/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
         // Obtener la imagen para eliminarla del servidor
-        const producto = db.prepare('SELECT imagen_url FROM productos WHERE id = ?').get(id);
+        const [productos] = await db.execute('SELECT imagen_url FROM productos WHERE id = ?', [id]);
         
-        if (producto && producto.imagen_url) {
-            const imagePath = path.join(__dirname, 'public/images', producto.imagen_url);
+        if (productos.length > 0 && productos[0].imagen_url) {
+            const imagePath = path.join(__dirname, 'public/images', productos[0].imagen_url);
             if (fs.existsSync(imagePath)) {
                 fs.unlinkSync(imagePath);
             }
         }
 
         // Eliminar de la base de datos
-        db.prepare('DELETE FROM productos WHERE id = ?').run(id);
+        await db.execute('DELETE FROM productos WHERE id = ?', [id]);
         res.json({ success: true, message: 'Producto eliminado' });
     } catch (error) {
         console.error('Error:', error);
