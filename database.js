@@ -1,5 +1,20 @@
 const Database = require('better-sqlite3');
-const db = new Database('productos.db');
+const path = require('path');
+const fs = require('fs');
+
+// Crear carpeta 'data' fuera de public/ para seguridad
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+}
+
+// Crear base de datos en la carpeta segura con permisos de escritura
+const dbPath = path.join(dataDir, 'productos.db');
+const db = new Database(dbPath);
+
+// Asegurar permisos de escritura
+fs.chmodSync(dbPath, 0o644);
+fs.chmodSync(dataDir, 0o755);
 
 // Crear tabla de productos con soporte para descripción
 const createTable = `
