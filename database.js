@@ -4,11 +4,17 @@ const mysql = require('mysql2/promise');
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    password: process.env.DB_PASSWORD || 'root',
     database: process.env.DB_NAME || 'autopartes',
+    // IMPORTANTE: Aiven usa puertos distintos al 3306, hay que leerlo de la variable
+    port: process.env.DB_PORT || 3306, 
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    // ESTO ES OBLIGATORIO PARA CONECTAR A AIVEN DESDE RENDER
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 // Crear tabla si no existe
@@ -16,6 +22,7 @@ async function initDatabase() {
     try {
         const connection = await pool.getConnection();
         
+        // El script se ejecutará en el esquema que definas en DB_NAME (ej. newschema)
         const createTable = `
             CREATE TABLE IF NOT EXISTS productos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -34,14 +41,15 @@ async function initDatabase() {
         
         await connection.execute(createTable);
         connection.release();
-        console.log('✅ Tabla de productos verificada/creada');
+        console.log('✅ Conexión exitosa y tabla de productos verificada');
     } catch (error) {
-        console.error('❌ Error al crear tabla:', error);
-        process.exit(1);
+        console.error('❌ Error en la base de datos:', error);
+        // No salimos del proceso inmediatamente para permitir que Render vea los logs
+        setTimeout(() => process.exit(1), 1000);
     }
 }
 
-// Inicializar base de datos al cargar el módulo
+// Inicializar base de datos
 initDatabase();
 
 module.exports = pool;
