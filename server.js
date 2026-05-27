@@ -4,37 +4,23 @@ const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const cloudinary = require('./cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const db = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurar multer para upload de imágenes
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, 'public/images/uploads');
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+// Configurar multer-storage-cloudinary
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'autopartes-app',
+        allowed_formats: ['jpg', 'jpeg', 'png'],
+        transformation: [{ width: 800, height: 800, crop: 'limit' }]
     }
 });
-
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png/;
-        const mimetype = allowedTypes.test(file.mimetype);
-        if (mimetype) {
-            return cb(null, true);
-        }
-        cb(new Error('Solo se permiten imágenes JPG, JPEG y PNG'));
-    }
-});
+const upload = multer({ storage: storage });
 
 // Servir archivos estáticos desde public/
 app.use(express.static(path.join(__dirname, 'public')));
@@ -89,7 +75,8 @@ app.post('/api/productos/agregar', upload.single('imagen'), async (req, res) => 
         }
 
         const { nombre, categoria, modelo_auto, año, precio, stock, descripcion } = req.body;
-        const imagen_url = `uploads/${req.file.filename}`;
+        // La URL de la imagen subida a Cloudinary
+        const imagen_url = req.file.path || req.file.url;
 
         const query = `
             INSERT INTO productos (nombre, descripcion, categoria, modelo_auto, año, precio, stock, imagen_url) 
