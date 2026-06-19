@@ -70,20 +70,25 @@ app.get('/api/productos/:id', async (req, res) => {
 // Agregar producto (admin)
 app.post('/api/productos/agregar', upload.single('imagen'), async (req, res) => {
     try {
+        // Registro de entrada para depuración
+        console.log('POST /api/productos/agregar - body:', req.body);
+        console.log('POST /api/productos/agregar - file:', req.file);
+
         if (!req.file) {
             return res.status(400).json({ error: 'No se subió ninguna imagen' });
         }
 
         const { nombre, categoria, modelo_auto, año, precio, stock, descripcion } = req.body;
-        // La URL de la imagen subida a Cloudinary
-        const imagen_url = req.file.path || req.file.url;
+
+        // La URL de la imagen subida a Cloudinary (multer-storage-cloudinary suele exponer `path`)
+        const imagen_url = (req.file && (req.file.path || req.file.url || req.file.secure_url)) || null;
 
         const query = `
             INSERT INTO productos (nombre, descripcion, categoria, modelo_auto, año, precio, stock, imagen_url) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await db.execute(query, [
+        const [result] = await db.execute(query, [
             nombre,
             descripcion || '',
             categoria || 'General',
@@ -94,7 +99,9 @@ app.post('/api/productos/agregar', upload.single('imagen'), async (req, res) => 
             imagen_url
         ]);
 
-        res.json({ success: true, message: 'Producto agregado exitosamente' });
+        console.log('Insert result:', result);
+
+        res.json({ success: true, message: 'Producto agregado exitosamente', insertId: result.insertId || null });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Error al agregar producto' });
@@ -122,6 +129,23 @@ app.delete('/api/productos/:id', async (req, res) => {
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Error al eliminar producto' });
+    }
+});
+
+// Ruta de prueba: inserta producto sin imagen (para depuración)
+app.post('/api/test-insert', async (req, res) => {
+    try {
+        const { nombre = 'Prueba sin imagen', descripcion = 'Insertado vía test' } = req.body || {};
+        const query = `
+            INSERT INTO productos (nombre, descripcion, categoria, modelo_auto, año, precio, stock, imagen_url)
+            VALUES (?, ?, 'General', 'N/A', 0, 0, 0, NULL)
+        `;
+        const [result] = await db.execute(query, [nombre, descripcion]);
+        console.log('Test insert result:', result);
+        res.json({ success: true, insertId: result.insertId || null });
+    } catch (error) {
+        console.error('Error en test-insert:', error);
+        res.status(500).json({ error: 'Error en test-insert' });
     }
 });
 
