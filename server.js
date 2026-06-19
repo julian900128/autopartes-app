@@ -11,16 +11,38 @@ const db = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurar multer-storage-cloudinary
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'autopartes-app',
-        allowed_formats: ['jpg', 'jpeg', 'png'],
-        transformation: [{ width: 800, height: 800, crop: 'limit' }]
-    }
-});
-const upload = multer({ storage: storage });
+// Configurar almacenamiento para multer: Cloudinary si hay credenciales, sino disco local
+const useCloudinary = !!(process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_SECRET);
+let upload;
+
+if (useCloudinary) {
+    const storageCloud = new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+            folder: 'autopartes-app',
+            allowed_formats: ['jpg', 'jpeg', 'png'],
+            transformation: [{ width: 800, height: 800, crop: 'limit' }]
+        }
+    });
+    console.log('Using Cloudinary storage for uploads');
+    upload = multer({ storage: storageCloud });
+} else {
+    // Fallback a almacenamiento local en public/images/uploads
+    const localStorage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            const uploadDir = path.join(__dirname, 'public', 'images', 'uploads');
+            fs.mkdirSync(uploadDir, { recursive: true });
+            cb(null, uploadDir);
+        },
+        filename: function (req, file, cb) {
+            const timestamp = Date.now();
+            const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+            cb(null, `${timestamp}-${safeName}`);
+        }
+    });
+    console.warn('CLOUDINARY credentials not found — using local disk storage for uploads');
+    upload = multer({ storage: localStorage });
+}
 
 // Servir archivos estáticos desde public/
 app.use(express.static(path.join(__dirname, 'public')));
