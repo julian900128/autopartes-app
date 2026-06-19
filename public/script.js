@@ -32,14 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'bg-white p-4 rounded-lg shadow-md border hover:border-blue-500 transition-all cursor-pointer';
             card.setAttribute('data-id', p.id);
-            // card.innerHTML = `
-            //     <img src="/images/${p.imagen_url || 'placeholder.jpg'}" alt="${p.nombre}" class="w-full h-48 object-contain mb-4">
-            //     <span class="text-xs font-bold text-blue-600 uppercase">${p.categoria}</span>
-            //     <h3 class="font-bold text-lg mb-1">${p.nombre}</h3>
-            //     <p class="text-gray-500 text-sm mb-3">Compatible con: ${p.modelo_auto} (${p.año})</p>
-            // `;
+            const imageUrl = getImageUrl(p.imagen_url);
             card.innerHTML = `
-            <img src="/images/${p.imagen_url || 'placeholder.jpg'}" alt="${p.nombre}" class="w-full h-48 object-contain mb-4">
+            <img src="${imageUrl}" alt="${p.nombre}" class="w-full h-48 object-contain mb-4">
             <span class="text-xs font-bold text-blue-600 uppercase">${p.categoria || 'General'}</span>
             <h3 class="font-bold text-lg mb-1">${p.nombre}</h3>
             <p class="text-gray-600 text-sm mb-3 line-clamp-2">${p.descripcion || 'Sin descripción adicional'}</p>
@@ -51,6 +46,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             productGrid.appendChild(card);
         });
+    }
+
+    function getImageUrl(imagenUrl) {
+        if (!imagenUrl) {
+            return '/images/placeholder.jpg';
+        }
+        const isAbsolute = /^https?:\/\//i.test(imagenUrl);
+        if (isAbsolute) {
+            return imagenUrl;
+        }
+        // Si viene con ruta relativa ya incluida, usarla directamente.
+        if (imagenUrl.startsWith('/')) {
+            return imagenUrl;
+        }
+        return `/images/${imagenUrl}`;
     }
 
     // Eventos para filtros con debounce
@@ -117,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // `;
             detailContent.innerHTML = `
                 <div class="bg-white p-6 rounded-lg shadow-md border max-w-2xl mx-auto">
-                    <img src="/images/${producto.imagen_url || 'placeholder.jpg'}" alt="${producto.nombre}" class="w-full h-64 object-contain mb-6">
+                    <img src="${getImageUrl(producto.imagen_url)}" alt="${producto.nombre}" class="w-full h-64 object-contain mb-6">
                     <div class="space-y-2">
                         <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">${producto.categoria || 'Repuesto'}</span>
                         <h3 class="font-bold text-2xl mb-2 text-gray-800">${producto.nombre}</h3>

@@ -102,8 +102,14 @@ app.post('/api/productos/agregar', upload.single('imagen'), async (req, res) => 
 
         const { nombre, categoria, modelo_auto, año, precio, stock, descripcion } = req.body;
 
-        // La URL de la imagen subida a Cloudinary (multer-storage-cloudinary suele exponer `path`)
-        const imagen_url = (req.file && (req.file.path || req.file.url || req.file.secure_url)) || null;
+        const imagen_url = (() => {
+            if (!req.file) return null;
+            if (useCloudinary) {
+                return req.file.path || req.file.url || req.file.secure_url || null;
+            }
+            // Guardamos la ruta relativa para servir desde public/
+            return `/images/uploads/${req.file.filename}`;
+        })();
 
         const query = `
             INSERT INTO productos (nombre, descripcion, categoria, modelo_auto, año, precio, stock, imagen_url) 
@@ -139,9 +145,12 @@ app.delete('/api/productos/:id', async (req, res) => {
         const [productos] = await db.execute('SELECT imagen_url FROM productos WHERE id = ?', [id]);
         
         if (productos.length > 0 && productos[0].imagen_url) {
-            const imagePath = path.join(__dirname, 'public/images', productos[0].imagen_url);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
+            if (!/^https?:\/\//i.test(productos[0].imagen_url)) {
+                const relativePath = productos[0].imagen_url.replace(/^\//, '');
+                const imagePath = path.join(__dirname, relativePath);
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
             }
         }
 
