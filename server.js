@@ -152,3 +152,13 @@ app.post('/api/test-insert', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+// Middleware global de errores (captura errores de multer y otros)
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err && err.stack ? err.stack : err);
+    if (err && err.name === 'MulterError') {
+        return res.status(400).json({ error: 'Error en la subida de archivo', details: err.message });
+    }
+    // En modo depuración devolvemos el mensaje para ayudar a encontrar el problema
+    res.status(500).json({ error: 'Error interno del servidor', details: err && err.message ? err.message : String(err) });
+});
