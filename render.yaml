@@ -16,6 +16,12 @@ services:
         sync: false
       - key: DB_NAME
         sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: NODE_ENV
         value: production
       - key: PORT
